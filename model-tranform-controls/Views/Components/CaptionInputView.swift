@@ -11,46 +11,32 @@ struct CaptionInputView: View {
     @ObservedObject var viewModel: PostBuilderViewModel
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "text.quote")
-                    .foregroundColor(.purple)
-                Text("Post Caption")
+                    .foregroundColor(.blue)
+                Text("Caption")
                     .font(.headline)
                     .fontWeight(.semibold)
             }
             
             VStack(alignment: .leading, spacing: 8) {
                 TextField("Share your immersive moment...", text: $viewModel.caption, axis: .vertical)
-                    .textFieldStyle(PlainTextFieldStyle())
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
                     .font(.body)
-                    .foregroundColor(.white)
-                    .padding(16)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.black.opacity(0.5))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
-                    )
                     .lineLimit(3...6)
                 
                 HStack {
                     Spacer()
                     Text("\(viewModel.captionCharacterCount)/280")
                         .font(.caption)
-                        .foregroundColor(viewModel.isCaptionValid ? .purple.opacity(0.7) : .red.opacity(0.7))
+                        .foregroundColor(viewModel.isCaptionValid ? .secondary : .red)
                 }
             }
         }
         .padding()
-        .background(Color.black.opacity(0.4))
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
-        )
+        .background(Color(.systemGray6))
+        .cornerRadius(12)
     }
 }
 

@@ -11,16 +11,16 @@ struct ModelSelectorView: View {
     @ObservedObject var viewModel: PostBuilderViewModel
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "sparkles")
-                    .foregroundColor(.purple)
+                    .foregroundColor(.blue)
                 Text("3D Model")
                     .font(.headline)
                     .fontWeight(.semibold)
             }
             
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 1), spacing: 12) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 1), spacing: 8) {
                 ForEach(ModelType.allCases, id: \.self) { modelType in
                     ModelOptionCard(
                         modelType: modelType,
@@ -33,12 +33,8 @@ struct ModelSelectorView: View {
             }
         }
         .padding()
-        .background(Color.black.opacity(0.4))
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
-        )
+        .background(Color(.systemGray6))
+        .cornerRadius(12)
     }
 }
 
@@ -52,35 +48,31 @@ struct ModelOptionCard: View {
             HStack(spacing: 12) {
                 Image(systemName: modelType.iconName)
                     .font(.title2)
-                    .foregroundColor(isSelected ? .white : .purple)
+                    .foregroundColor(isSelected ? .white : .blue)
                     .frame(width: 24, height: 24)
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(modelType.displayName)
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                     
                     Text(modelType.description)
                         .font(.caption)
-                        .foregroundColor(.purple.opacity(0.7))
+                        .foregroundColor(.secondary)
                 }
                 
                 Spacer()
                 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.purple)
+                        .foregroundColor(.blue)
                         .font(.title3)
                 }
             }
-            .padding(16)
+            .padding(12)
             .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? Color.purple.opacity(0.3) : Color.black.opacity(0.3))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? Color.purple : Color.white.opacity(0.1), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isSelected ? Color.blue : Color(.systemGray5))
             )
         }
         .buttonStyle(PlainButtonStyle())

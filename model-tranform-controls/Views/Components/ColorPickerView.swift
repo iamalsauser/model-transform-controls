@@ -11,16 +11,16 @@ struct ColorPickerView: View {
     @ObservedObject var viewModel: PostBuilderViewModel
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "paintpalette")
-                    .foregroundColor(.purple)
-                Text("Color Theme")
+                    .foregroundColor(.blue)
+                Text("Color")
                     .font(.headline)
                     .fontWeight(.semibold)
             }
             
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 12) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 8) {
                 ForEach(viewModel.colorPresets, id: \.self) { color in
                     ColorOptionButton(
                         color: color,
@@ -33,12 +33,8 @@ struct ColorPickerView: View {
             }
         }
         .padding()
-        .background(Color.black.opacity(0.4))
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
-        )
+        .background(Color(.systemGray6))
+        .cornerRadius(12)
     }
 }
 
@@ -51,13 +47,13 @@ struct ColorOptionButton: View {
         Button(action: action) {
             Circle()
                 .fill(color)
-                .frame(width: 40, height: 40)
+                .frame(width: 36, height: 36)
                 .overlay(
                     Circle()
-                        .stroke(isSelected ? Color.white : Color.white.opacity(0.3), lineWidth: isSelected ? 3 : 1)
+                        .stroke(isSelected ? Color.blue : Color(.systemGray4), lineWidth: isSelected ? 2 : 1)
                 )
-                .scaleEffect(isSelected ? 1.1 : 1.0)
-                .animation(.easeInOut(duration: 0.2), value: isSelected)
+                .scaleEffect(isSelected ? 1.05 : 1.0)
+                .animation(.easeInOut(duration: 0.15), value: isSelected)
         }
         .buttonStyle(PlainButtonStyle())
     }

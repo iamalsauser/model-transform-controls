@@ -33,7 +33,8 @@ class PostBuilderViewModel: ObservableObject {
     
     init() {
         setupBindings()
-        updateScene()
+        // Initialize scene with default values
+        sceneModel.updateModel(selectedModel, color: modelColor)
     }
     
     // MARK: - Setup
@@ -62,10 +63,12 @@ class PostBuilderViewModel: ObservableObject {
     
     // MARK: - Scene Updates
     private func updateScene() {
+        print("🔄 Updating scene: \(selectedModel) with color: \(modelColor)")
         sceneModel.updateModel(selectedModel, color: modelColor)
     }
     
     private func updateTransforms() {
+        print("🔄 Updating transforms: rotation=\(rotation), scale=\(scale)")
         sceneModel.updateTransform(rotation: rotation, scale: scale)
     }
     

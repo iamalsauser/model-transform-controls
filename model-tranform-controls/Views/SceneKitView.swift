@@ -15,10 +15,10 @@ struct SceneKitView: UIViewRepresentable {
         let sceneView = SCNView()
         sceneView.scene = viewModel.sceneModel.scene
         sceneView.allowsCameraControl = true
-        sceneView.backgroundColor = UIColor.clear
+        sceneView.backgroundColor = UIColor.systemGray6
         sceneView.antialiasingMode = .multisampling4X
         
-        // Enable auto-lighting
+        // Enable auto-lighting for better visibility
         sceneView.autoenablesDefaultLighting = true
         
         // Set up camera controls
@@ -37,7 +37,15 @@ struct SceneKitView: UIViewRepresentable {
         uiView.scene = viewModel.sceneModel.scene
         
         // Update camera position for better viewing
-        viewModel.sceneModel.cameraNode.position = SCNVector3(0, 0, 5)
+        viewModel.sceneModel.cameraNode.position = SCNVector3(0, 0, 8)
+        
+        // Ensure the scene is properly set up
+        if viewModel.sceneModel.modelNode == nil {
+            viewModel.sceneModel.updateModel(viewModel.selectedModel, color: viewModel.modelColor)
+        }
+        
+        // Force a render update
+        uiView.setNeedsDisplay()
     }
     
     func makeCoordinator() -> Coordinator {

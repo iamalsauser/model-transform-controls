@@ -22,35 +22,52 @@ class SceneModel: ObservableObject {
         self.cameraNode = SCNNode()
         
         setupScene()
+        // Create initial model
+        updateModel(.heart, color: .red)
     }
     
     private func setupScene() {
         // Add root node to scene
         scene.rootNode.addChildNode(rootNode)
         
-        // Setup camera
+        // Setup camera with better positioning
         cameraNode.camera = SCNCamera()
-        cameraNode.position = SCNVector3(0, 0, 5)
+        cameraNode.camera?.fieldOfView = 60
+        cameraNode.position = SCNVector3(0, 0, 8)
+        cameraNode.look(at: SCNVector3(0, 0, 0))
         rootNode.addChildNode(cameraNode)
         
-        // Add ambient lighting
+        // Add ambient lighting for better visibility
         let ambientLight = SCNNode()
         ambientLight.light = SCNLight()
         ambientLight.light?.type = .ambient
-        ambientLight.light?.intensity = 100
+        ambientLight.light?.intensity = 300
+        ambientLight.light?.color = UIColor.white
         rootNode.addChildNode(ambientLight)
         
         // Add directional lighting
         let directionalLight = SCNNode()
         directionalLight.light = SCNLight()
         directionalLight.light?.type = .directional
-        directionalLight.light?.intensity = 800
+        directionalLight.light?.intensity = 1000
+        directionalLight.light?.color = UIColor.white
         directionalLight.position = SCNVector3(5, 5, 5)
-        directionalLight.eulerAngles = SCNVector3(-Float.pi/4, Float.pi/4, 0)
+        directionalLight.look(at: SCNVector3(0, 0, 0))
         rootNode.addChildNode(directionalLight)
+        
+        // Add point light for better illumination
+        let pointLight = SCNNode()
+        pointLight.light = SCNLight()
+        pointLight.light?.type = .omni
+        pointLight.light?.intensity = 500
+        pointLight.light?.color = UIColor.white
+        pointLight.position = SCNVector3(0, 2, 3)
+        rootNode.addChildNode(pointLight)
     }
     
     func updateModel(_ modelType: ModelType, color: Color) {
+        print("🎨 Creating model: \(modelType) with color: \(color)")
+        
         // Remove existing model
         modelNode?.removeFromParentNode()
         
@@ -69,45 +86,37 @@ class SceneModel: ObservableObject {
         
         if let modelNode = modelNode {
             rootNode.addChildNode(modelNode)
+            print("✅ Model added to scene: \(modelType)")
+        } else {
+            print("❌ Failed to create model: \(modelType)")
         }
     }
     
     private func createHeartModel(color: Color) -> SCNNode {
         let heartNode = SCNNode()
         
-        // Create heart geometry using custom shape
-        let heartPath = UIBezierPath()
-        heartPath.move(to: CGPoint(x: 0, y: 0.5))
-        heartPath.addCurve(to: CGPoint(x: -1, y: -0.5),
-                          controlPoint1: CGPoint(x: -0.5, y: 0.5),
-                          controlPoint2: CGPoint(x: -1, y: 0))
-        heartPath.addCurve(to: CGPoint(x: 0, y: -1.5),
-                          controlPoint1: CGPoint(x: -1, y: -1),
-                          controlPoint2: CGPoint(x: -0.5, y: -1.5))
-        heartPath.addCurve(to: CGPoint(x: 1, y: -0.5),
-                          controlPoint1: CGPoint(x: 0.5, y: -1.5),
-                          controlPoint2: CGPoint(x: 1, y: -1))
-        heartPath.addCurve(to: CGPoint(x: 0, y: 0.5),
-                          controlPoint1: CGPoint(x: 1, y: 0),
-                          controlPoint2: CGPoint(x: 0.5, y: 0.5))
+        // Create a simple heart using a sphere with custom material
+        let heartGeometry = SCNSphere(radius: 1.0)
         
-        let heartShape = SCNShape(path: heartPath, extrusionDepth: 0.1)
-        let heartGeometry = heartShape
-        
-        // Create material
+        // Create material with better visibility
         let material = SCNMaterial()
         material.diffuse.contents = UIColor(color)
-        material.emission.contents = UIColor(color).withAlphaComponent(0.3)
-        material.transparency = 0.9
-        heartGeometry.materials = [material]
+        material.emission.contents = UIColor(color).withAlphaComponent(0.5)
+        material.specular.contents = UIColor.white
+        material.shininess = 0.8
+        material.transparency = 1.0
         
+        heartGeometry.materials = [material]
         heartNode.geometry = heartGeometry
+        
+        // Position the heart properly
+        heartNode.position = SCNVector3(0, 0, 0)
         heartNode.scale = SCNVector3(1, 1, 1)
         
         // Add pulse animation
         let pulseAction = SCNAction.sequence([
-            SCNAction.scale(to: 1.2, duration: 0.5),
-            SCNAction.scale(to: 1.0, duration: 0.5)
+            SCNAction.scale(to: 1.3, duration: 0.8),
+            SCNAction.scale(to: 1.0, duration: 0.8)
         ])
         heartNode.runAction(SCNAction.repeatForever(pulseAction))
         
@@ -118,21 +127,23 @@ class SceneModel: ObservableObject {
         let sparklesNode = SCNNode()
         
         // Create multiple sparkle particles
-        for i in 0..<8 {
+        for i in 0..<6 {
             let sparkle = SCNNode()
             
-            // Create star geometry
-            let starGeometry = SCNBox(width: 0.1, height: 0.1, length: 0.1, chamferRadius: 0)
+            // Create larger, more visible star geometry
+            let starGeometry = SCNSphere(radius: 0.2)
             let material = SCNMaterial()
             material.diffuse.contents = UIColor(color)
-            material.emission.contents = UIColor(color).withAlphaComponent(0.5)
+            material.emission.contents = UIColor(color).withAlphaComponent(0.7)
+            material.specular.contents = UIColor.white
+            material.shininess = 1.0
             starGeometry.materials = [material]
             
             sparkle.geometry = starGeometry
             
-            // Position in circle
-            let angle = Float(i) * Float.pi * 2 / 8
-            let radius: Float = 1.0
+            // Position in circle with larger radius
+            let angle = Float(i) * Float.pi * 2 / 6
+            let radius: Float = 1.5
             sparkle.position = SCNVector3(cos(angle) * radius, sin(angle) * radius, 0)
             
             // Add rotation animation
@@ -152,31 +163,25 @@ class SceneModel: ObservableObject {
     private func createLightningModel(color: Color) -> SCNNode {
         let lightningNode = SCNNode()
         
-        // Create lightning bolt geometry
-        let lightningPath = UIBezierPath()
-        lightningPath.move(to: CGPoint(x: 0, y: 1))
-        lightningPath.addLine(to: CGPoint(x: -0.3, y: 0.3))
-        lightningPath.addLine(to: CGPoint(x: 0.2, y: 0))
-        lightningPath.addLine(to: CGPoint(x: -0.1, y: -0.4))
-        lightningPath.addLine(to: CGPoint(x: 0, y: -1))
+        // Create a simple lightning bolt using a cylinder
+        let lightningGeometry = SCNCylinder(radius: 0.1, height: 3.0)
         
-        let lightningShape = SCNShape(path: lightningPath, extrusionDepth: 0.05)
-        let lightningGeometry = lightningShape
-        
-        // Create material
+        // Create material with better visibility
         let material = SCNMaterial()
         material.diffuse.contents = UIColor(color)
-        material.emission.contents = UIColor(color).withAlphaComponent(0.7)
-        material.transparency = 0.8
+        material.emission.contents = UIColor(color).withAlphaComponent(0.8)
+        material.specular.contents = UIColor.white
+        material.shininess = 1.0
         lightningGeometry.materials = [material]
         
         lightningNode.geometry = lightningGeometry
+        lightningNode.position = SCNVector3(0, 0, 0)
         lightningNode.scale = SCNVector3(1, 1, 1)
         
         // Add electric flicker animation
         let flickerAction = SCNAction.sequence([
-            SCNAction.fadeOpacity(to: 0.3, duration: 0.1),
-            SCNAction.fadeOpacity(to: 1.0, duration: 0.1)
+            SCNAction.fadeOpacity(to: 0.4, duration: 0.2),
+            SCNAction.fadeOpacity(to: 1.0, duration: 0.2)
         ])
         lightningNode.runAction(SCNAction.repeatForever(flickerAction))
         
@@ -184,8 +189,13 @@ class SceneModel: ObservableObject {
     }
     
     func updateTransform(rotation: Float, scale: Float) {
-        modelNode?.eulerAngles.z = rotation * Float.pi / 180
-        modelNode?.scale = SCNVector3(scale, scale, scale)
+        if let modelNode = modelNode {
+            modelNode.eulerAngles.z = rotation * Float.pi / 180
+            modelNode.scale = SCNVector3(scale, scale, scale)
+            print("🔄 Transform updated: rotation=\(rotation)°, scale=\(scale)x")
+        } else {
+            print("⚠️ No model node to transform")
+        }
     }
     
     func updateAnimationSpeed(_ speed: Float) {
@@ -220,8 +230,8 @@ class SceneModel: ObservableObject {
     }
     
     private func recreateSparklesAnimation(modelNode: SCNNode, speedMultiplier: Float) {
-        // Recreate sparkle animations
-        for (_, sparkle) in modelNode.childNodes.enumerated() {
+        // Recreate sparkle animations for existing child nodes
+        modelNode.childNodes.forEach { sparkle in
             let rotateAction = SCNAction.rotateBy(x: 0, y: 0, z: CGFloat(Float.pi) * 2, duration: 2.0 * Double(speedMultiplier))
             sparkle.runAction(SCNAction.repeatForever(rotateAction))
         }
