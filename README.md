@@ -47,9 +47,11 @@ FlamPostBuilder/
 ## 🚀 Features
 
 ### 3D Models
-- **💖 Heart**: Pulsing animation with glow effects
-- **✨ Sparkles**: Orbital particle system
-- **⚡ Lightning**: Electric flicker animation
+- **💖 Heart**: Real 3D heart model with pulsing animation and glow effects
+- **✨ Sparkles**: Orbital particle system using the same heart model
+- **⚡ Lightning**: Electric flicker animation using the same heart model
+
+All model types now showcase the `heart_model.usdz` file from the `Models/3d_models/` directory, demonstrating how a single 3D asset can be used with different animations and behaviors. The system includes robust fallback mechanisms to SCN format and procedural geometry if USDZ loading fails.
 
 ### Interactive Controls
 - **Real-time rotation** (0-360°)
@@ -114,6 +116,29 @@ class PostBuilderViewModel: ObservableObject {
 - **SCNAction** for model animations
 - **Combine publishers** for real-time UI updates
 - **CADisplayLink** for smooth 60fps updates
+
+### 3D Model Loading
+```swift
+// Unified USDZ model loading for all model types
+private func createUSDZModel(color: Color, modelType: ModelType) -> SCNNode {
+    // Primary: Load USDZ with proper conversion options
+    if let modelURL = Bundle.main.url(forResource: "heart_model", withExtension: "usdz", subdirectory: "Models/3d_models") {
+        let loadedScene = try SCNScene(url: modelURL, options: [
+            .convertToYUp: true,
+            .convertUnitsToMeters: true
+        ])
+        
+        // Apply different behaviors based on model type
+        switch modelType {
+        case .heart: // Gentle pulse and rotation
+        case .sparkles: // Orbital rotation with sparkle effects
+        case .lightning: // Electric flicker animation
+        }
+    }
+    
+    // Fallback: SCN format, then procedural geometry
+}
+```
 
 ## 🎨 UI/UX Design
 

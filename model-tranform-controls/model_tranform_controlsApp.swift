@@ -11,7 +11,7 @@ import SwiftUI
 struct FlamPostBuilderApp: App {
     var body: some Scene {
         WindowGroup {
-            PostBuilderView()
+            ContentView()
         }
     }
 }

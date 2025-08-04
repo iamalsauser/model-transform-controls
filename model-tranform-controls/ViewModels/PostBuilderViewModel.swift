@@ -12,6 +12,8 @@ import Combine
 @MainActor
 class PostBuilderViewModel: ObservableObject {
     // MARK: - Published Properties
+   // @Published var modelManager = ModelManager()
+
     @Published var caption: String = ""
     @Published var selectedModel: ModelType = .heart
     @Published var modelColor: Color = .red

@@ -74,119 +74,276 @@ class SceneModel: ObservableObject {
         // Update current model type
         currentModelType = modelType
         
-        // Create new model based on type
-        switch modelType {
-        case .heart:
-            modelNode = createHeartModel(color: color)
-        case .sparkles:
-            modelNode = createSparklesModel(color: color)
-        case .lightning:
-            modelNode = createLightningModel(color: color)
-        }
+        // All models now use the heart_model.usdz for demonstration
+        modelNode = createUSDZModel(color: color, modelType: modelType)
         
         if let modelNode = modelNode {
             rootNode.addChildNode(modelNode)
-            print("✅ Model added to scene: \(modelType)")
+            print("✅ USDZ model added to scene: \(modelType)")
         } else {
-            print("❌ Failed to create model: \(modelType)")
+            print("❌ Failed to create USDZ model: \(modelType)")
         }
     }
     
-    private func createHeartModel(color: Color) -> SCNNode {
-        let heartNode = SCNNode()
+    private func createUSDZModel(color: Color, modelType: ModelType) -> SCNNode {
+        let modelNode = SCNNode()
+        var modelLoaded = false
         
-        // Create a simple heart using a sphere with custom material
-        let heartGeometry = SCNSphere(radius: 1.0)
+        // Load USDZ model from the specified path
+        if let modelURL = Bundle.main.url(forResource: "heart_model", withExtension: "usdz", subdirectory: "Models/3d_models") {
+            do {
+                let loadedScene = try SCNScene(url: modelURL, options: [
+                    .convertToYUp: true,
+                    .convertUnitsToMeters: true
+                ])
+                
+                // Clone the entire scene structure
+                let modelRootNode = loadedScene.rootNode.clone()
+                
+                // Apply color and material properties
+                applyColorToNode(modelRootNode, color: color)
+                
+                // Add to model node
+                modelNode.addChildNode(modelRootNode)
+                print("✅ Successfully loaded USDZ model: \(modelURL.lastPathComponent) for \(modelType)")
+                modelLoaded = true
+                
+                // Apply different scaling and positioning based on model type
+                switch modelType {
+                case .heart:
+                    modelNode.scale = SCNVector3(2.0, 2.0, 2.0)
+                    modelNode.position = SCNVector3(0, 0, 0)
+                case .sparkles:
+                    modelNode.scale = SCNVector3(1.5, 1.5, 1.5)
+                    modelNode.position = SCNVector3(0, 0, 0)
+                case .lightning:
+                    modelNode.scale = SCNVector3(1.8, 1.8, 1.8)
+                    modelNode.position = SCNVector3(0, 0, 0)
+                }
+                
+            } catch {
+                print("❌ Error loading USDZ model: \(error.localizedDescription)")
+            }
+        } else {
+            print("❌ Could not find heart_model.usdz at path: Models/3d_models/")
+        }
         
-        // Create material with better visibility
-        let material = SCNMaterial()
-        material.diffuse.contents = UIColor(color)
-        material.emission.contents = UIColor(color).withAlphaComponent(0.5)
-        material.specular.contents = UIColor.white
-        material.shininess = 0.8
-        material.transparency = 1.0
+        // Fallback to SCN if USDZ fails
+        if !modelLoaded {
+            if let modelURL = Bundle.main.url(forResource: "heart_model", withExtension: "scn", subdirectory: "Models/3d_models") {
+                do {
+                    let loadedScene = try SCNScene(url: modelURL, options: nil)
+                    let modelRootNode = loadedScene.rootNode.clone()
+                    applyColorToNode(modelRootNode, color: color)
+                    modelNode.addChildNode(modelRootNode)
+                    print("✅ Loaded model from SCN file for \(modelType)")
+                    modelLoaded = true
+                    
+                    // Apply scaling for SCN fallback
+                    modelNode.scale = SCNVector3(1.5, 1.5, 1.5)
+                    modelNode.position = SCNVector3(0, 0, 0)
+                    
+                } catch {
+                    print("❌ Error loading SCN model: \(error.localizedDescription)")
+                }
+            }
+        }
         
-        heartGeometry.materials = [material]
-        heartNode.geometry = heartGeometry
+        // Final fallback to procedural model
+        if !modelLoaded {
+            print("⚠️ Using procedural fallback for \(modelType)")
+            switch modelType {
+            case .heart:
+                modelNode.addChildNode(createProceduralHeart(color: color))
+            case .sparkles:
+                modelNode.addChildNode(createProceduralSparkles(color: color))
+            case .lightning:
+                modelNode.addChildNode(createProceduralLightning(color: color))
+            }
+        }
         
-        // Position the heart properly
-        heartNode.position = SCNVector3(0, 0, 0)
-        heartNode.scale = SCNVector3(1, 1, 1)
+        // Add appropriate animation based on model type
+        addModelAnimation(to: modelNode, modelType: modelType)
         
-        // Add pulse animation
-        let pulseAction = SCNAction.sequence([
-            SCNAction.scale(to: 1.3, duration: 0.8),
-            SCNAction.scale(to: 1.0, duration: 0.8)
-        ])
-        heartNode.runAction(SCNAction.repeatForever(pulseAction))
-        
-        return heartNode
+        return modelNode
     }
     
-    private func createSparklesModel(color: Color) -> SCNNode {
-        let sparklesNode = SCNNode()
+    private func createProceduralHeart(color: Color) -> SCNNode {
+        let heartGroup = SCNNode()
+        
+        // Create heart shape using two spheres and a rotated cube
+        let leftSphere = SCNNode()
+        leftSphere.geometry = SCNSphere(radius: 0.5)
+        leftSphere.position = SCNVector3(-0.3, 0.3, 0)
+        
+        let rightSphere = SCNNode()
+        rightSphere.geometry = SCNSphere(radius: 0.5)
+        rightSphere.position = SCNVector3(0.3, 0.3, 0)
+        
+        let bottomCube = SCNNode()
+        bottomCube.geometry = SCNBox(width: 1.0, height: 1.0, length: 1.0, chamferRadius: 0.1)
+        bottomCube.position = SCNVector3(0, -0.2, 0)
+        bottomCube.eulerAngles = SCNVector3(0, 0, Float.pi / 4)
+        
+        // Apply material to all parts
+        let material = SCNMaterial()
+        material.diffuse.contents = UIColor(color)
+        material.emission.contents = UIColor(color).withAlphaComponent(0.3)
+        material.specular.contents = UIColor.white
+        material.shininess = 0.8
+        
+        leftSphere.geometry?.materials = [material]
+        rightSphere.geometry?.materials = [material]
+        bottomCube.geometry?.materials = [material]
+        
+        heartGroup.addChildNode(leftSphere)
+        heartGroup.addChildNode(rightSphere)
+        heartGroup.addChildNode(bottomCube)
+        
+        return heartGroup
+    }
+    
+    private func createProceduralSparkles(color: Color) -> SCNNode {
+        let sparklesGroup = SCNNode()
         
         // Create multiple sparkle particles
-        for i in 0..<6 {
+        for i in 0..<8 {
             let sparkle = SCNNode()
             
-            // Create larger, more visible star geometry
-            let starGeometry = SCNSphere(radius: 0.2)
+            // Create star-like geometry using spheres
+            let starGeometry = SCNSphere(radius: 0.15)
             let material = SCNMaterial()
             material.diffuse.contents = UIColor(color)
-            material.emission.contents = UIColor(color).withAlphaComponent(0.7)
+            material.emission.contents = UIColor(color).withAlphaComponent(0.8)
             material.specular.contents = UIColor.white
             material.shininess = 1.0
             starGeometry.materials = [material]
             
             sparkle.geometry = starGeometry
             
-            // Position in circle with larger radius
-            let angle = Float(i) * Float.pi * 2 / 6
-            let radius: Float = 1.5
-            sparkle.position = SCNVector3(cos(angle) * radius, sin(angle) * radius, 0)
+            // Position in layered circles
+            let layer = i < 4 ? 0 : 1
+            let angle = Float(i % 4) * Float.pi * 2 / 4
+            let radius: Float = layer == 0 ? 1.2 : 1.8
+            let height: Float = layer == 0 ? 0 : 0.5
             
-            // Add rotation animation
-            let rotateAction = SCNAction.rotateBy(x: 0, y: 0, z: CGFloat(Float.pi) * 2, duration: 2.0)
-            sparkle.runAction(SCNAction.repeatForever(rotateAction))
+            sparkle.position = SCNVector3(
+                cos(angle) * radius,
+                sin(angle) * radius + height,
+                Float.random(in: -0.2...0.2)
+            )
             
-            sparklesNode.addChildNode(sparkle)
+            sparklesGroup.addChildNode(sparkle)
         }
         
-        // Add orbital animation
-        let orbitAction = SCNAction.rotateBy(x: 0, y: 0, z: CGFloat(Float.pi) * 2, duration: 4.0)
-        sparklesNode.runAction(SCNAction.repeatForever(orbitAction))
-        
-        return sparklesNode
+        return sparklesGroup
     }
     
-    private func createLightningModel(color: Color) -> SCNNode {
-        let lightningNode = SCNNode()
+    private func createProceduralLightning(color: Color) -> SCNNode {
+        let lightningGroup = SCNNode()
         
-        // Create a simple lightning bolt using a cylinder
-        let lightningGeometry = SCNCylinder(radius: 0.1, height: 3.0)
+        // Create zigzag lightning bolt using multiple cylinders
+        let segments = [
+            (SCNVector3(0, 1.0, 0), 0.0),
+            (SCNVector3(0.3, 0.5, 0), 0.3),
+            (SCNVector3(-0.2, 0, 0), -0.2),
+            (SCNVector3(0.4, -0.5, 0), 0.4),
+            (SCNVector3(0, -1.0, 0), 0.0)
+        ]
         
-        // Create material with better visibility
-        let material = SCNMaterial()
-        material.diffuse.contents = UIColor(color)
-        material.emission.contents = UIColor(color).withAlphaComponent(0.8)
-        material.specular.contents = UIColor.white
-        material.shininess = 1.0
-        lightningGeometry.materials = [material]
+        for segment in segments {
+            let bolt = SCNNode()
+            let boltGeometry = SCNCylinder(radius: 0.08, height: 0.6)
+            
+            let material = SCNMaterial()
+            material.diffuse.contents = UIColor(color)
+            material.emission.contents = UIColor(color).withAlphaComponent(0.9)
+            material.specular.contents = UIColor.white
+            material.shininess = 1.0
+            boltGeometry.materials = [material]
+            
+            bolt.geometry = boltGeometry
+            bolt.position = segment.0
+            bolt.eulerAngles.z = Float(segment.1)
+            
+            lightningGroup.addChildNode(bolt)
+        }
         
-        lightningNode.geometry = lightningGeometry
-        lightningNode.position = SCNVector3(0, 0, 0)
-        lightningNode.scale = SCNVector3(1, 1, 1)
-        
-        // Add electric flicker animation
-        let flickerAction = SCNAction.sequence([
-            SCNAction.fadeOpacity(to: 0.4, duration: 0.2),
-            SCNAction.fadeOpacity(to: 1.0, duration: 0.2)
-        ])
-        lightningNode.runAction(SCNAction.repeatForever(flickerAction))
-        
-        return lightningNode
+        return lightningGroup
     }
+    
+    private func addModelAnimation(to node: SCNNode, modelType: ModelType) {
+        switch modelType {
+        case .heart:
+            // Heart animation: gentle pulse and rotation
+            let pulseAction = SCNAction.sequence([
+                SCNAction.scale(to: 1.2, duration: 0.8),
+                SCNAction.scale(to: 1.0, duration: 0.8)
+            ])
+            node.runAction(SCNAction.repeatForever(pulseAction))
+            
+            let rotateAction = SCNAction.rotateBy(x: 0, y: CGFloat(Float.pi) * 0.1, z: 0, duration: 2.0)
+            node.runAction(SCNAction.repeatForever(rotateAction))
+            
+        case .sparkles:
+            // Sparkles animation: orbital rotation with individual sparkle movement
+            let orbitAction = SCNAction.rotateBy(x: 0, y: 0, z: CGFloat(Float.pi) * 2, duration: 5.0)
+            node.runAction(SCNAction.repeatForever(orbitAction))
+            
+            // Add individual sparkle animations to child nodes
+            node.childNodes.forEach { sparkle in
+                let sparkleAction = SCNAction.rotateBy(
+                    x: CGFloat(Float.random(in: 0...Float.pi)),
+                    y: CGFloat(Float.random(in: 0...Float.pi)),
+                    z: CGFloat(Float.random(in: 0...Float.pi)),
+                    duration: Double.random(in: 1.5...3.0)
+                )
+                sparkle.runAction(SCNAction.repeatForever(sparkleAction))
+            }
+            
+        case .lightning:
+            // Lightning animation: electric flicker effect
+            let flickerAction = SCNAction.sequence([
+                SCNAction.fadeOpacity(to: 0.3, duration: 0.1),
+                SCNAction.fadeOpacity(to: 1.0, duration: 0.1)
+            ])
+            node.runAction(SCNAction.repeatForever(flickerAction))
+            
+            // Add slight rotation for dynamic effect
+            let rotateAction = SCNAction.rotateBy(x: 0, y: CGFloat(Float.pi) * 0.05, z: 0, duration: 1.5)
+            node.runAction(SCNAction.repeatForever(rotateAction))
+        }
+    }
+    
+    private func applyColorToNode(_ node: SCNNode, color: Color) {
+        // Apply color to the node's geometry if it exists
+        if let geometry = node.geometry {
+            let material = SCNMaterial()
+            material.diffuse.contents = UIColor(color)
+            material.emission.contents = UIColor(color).withAlphaComponent(0.3)
+            material.specular.contents = UIColor.white
+            material.shininess = 0.8
+            material.transparency = 1.0
+            
+            // Preserve existing materials if they exist, otherwise create new
+            if geometry.materials.isEmpty {
+                geometry.materials = [material]
+            } else {
+                // Update existing materials
+                for existingMaterial in geometry.materials {
+                    existingMaterial.diffuse.contents = UIColor(color)
+                    existingMaterial.emission.contents = UIColor(color).withAlphaComponent(0.3)
+                }
+            }
+        }
+        
+        // Recursively apply color to all child nodes
+        for childNode in node.childNodes {
+            applyColorToNode(childNode, color: color)
+        }
+    }
+    
+
     
     func updateTransform(rotation: Float, scale: Float) {
         if let modelNode = modelNode {
@@ -199,7 +356,6 @@ class SceneModel: ObservableObject {
     }
     
     func updateAnimationSpeed(_ speed: Float) {
-        // Update animation speeds by recreating animations with adjusted duration
         guard let modelNode = modelNode else { return }
         
         // Remove existing animations
@@ -211,42 +367,55 @@ class SceneModel: ObservableObject {
         // Recreate animations with new speed
         let speedMultiplier = speed > 0 ? 1.0 / speed : 1.0
         
-        switch currentModelType {
+        // Use unified animation recreation for all model types
+        recreateModelAnimation(modelNode: modelNode, modelType: currentModelType, speedMultiplier: speedMultiplier)
+    }
+    
+    private func recreateModelAnimation(modelNode: SCNNode, modelType: ModelType, speedMultiplier: Float) {
+        switch modelType {
         case .heart:
-            recreateHeartAnimation(modelNode: modelNode, speedMultiplier: speedMultiplier)
+            // Heart animation: gentle pulse and rotation
+            let pulseAction = SCNAction.sequence([
+                SCNAction.scale(to: 1.2, duration: 0.8 * Double(speedMultiplier)),
+                SCNAction.scale(to: 1.0, duration: 0.8 * Double(speedMultiplier))
+            ])
+            modelNode.runAction(SCNAction.repeatForever(pulseAction))
+            
+            let rotateAction = SCNAction.rotateBy(x: 0, y: CGFloat(Float.pi) * 0.1, z: 0, duration: 2.0 * Double(speedMultiplier))
+            modelNode.runAction(SCNAction.repeatForever(rotateAction))
+            
         case .sparkles:
-            recreateSparklesAnimation(modelNode: modelNode, speedMultiplier: speedMultiplier)
+            // Sparkles animation: orbital rotation with individual sparkle movement
+            modelNode.childNodes.forEach { sparkle in
+                let sparkleAction = SCNAction.rotateBy(
+                    x: CGFloat(Float.random(in: 0...Float.pi)),
+                    y: CGFloat(Float.random(in: 0...Float.pi)),
+                    z: CGFloat(Float.random(in: 0...Float.pi)),
+                    duration: Double.random(in: 1.5...3.0) * Double(speedMultiplier)
+                )
+                sparkle.runAction(SCNAction.repeatForever(sparkleAction))
+            }
+            
+            let orbitAction = SCNAction.rotateBy(x: 0, y: 0, z: CGFloat(Float.pi) * 2, duration: 5.0 * Double(speedMultiplier))
+            modelNode.runAction(SCNAction.repeatForever(orbitAction))
+            
         case .lightning:
-            recreateLightningAnimation(modelNode: modelNode, speedMultiplier: speedMultiplier)
+            // Lightning animation: electric flicker effect
+            modelNode.childNodes.enumerated().forEach { (i, bolt) in
+                let flickerAction = SCNAction.sequence([
+                    SCNAction.wait(duration: Double(i) * 0.05 * Double(speedMultiplier)),
+                    SCNAction.sequence([
+                        SCNAction.fadeOpacity(to: 0.3, duration: 0.1 * Double(speedMultiplier)),
+                        SCNAction.fadeOpacity(to: 1.0, duration: 0.1 * Double(speedMultiplier))
+                    ])
+                ])
+                bolt.runAction(SCNAction.repeatForever(flickerAction))
+            }
+            
+            // Add slight rotation for dynamic effect
+            let rotateAction = SCNAction.rotateBy(x: 0, y: CGFloat(Float.pi) * 0.05, z: 0, duration: 1.5 * Double(speedMultiplier))
+            modelNode.runAction(SCNAction.repeatForever(rotateAction))
         }
-    }
-    
-    private func recreateHeartAnimation(modelNode: SCNNode, speedMultiplier: Float) {
-        let pulseAction = SCNAction.sequence([
-            SCNAction.scale(to: 1.2, duration: 0.5 * Double(speedMultiplier)),
-            SCNAction.scale(to: 1.0, duration: 0.5 * Double(speedMultiplier))
-        ])
-        modelNode.runAction(SCNAction.repeatForever(pulseAction))
-    }
-    
-    private func recreateSparklesAnimation(modelNode: SCNNode, speedMultiplier: Float) {
-        // Recreate sparkle animations for existing child nodes
-        modelNode.childNodes.forEach { sparkle in
-            let rotateAction = SCNAction.rotateBy(x: 0, y: 0, z: CGFloat(Float.pi) * 2, duration: 2.0 * Double(speedMultiplier))
-            sparkle.runAction(SCNAction.repeatForever(rotateAction))
-        }
-        
-        // Recreate orbital animation
-        let orbitAction = SCNAction.rotateBy(x: 0, y: 0, z: CGFloat(Float.pi) * 2, duration: 4.0 * Double(speedMultiplier))
-        modelNode.runAction(SCNAction.repeatForever(orbitAction))
-    }
-    
-    private func recreateLightningAnimation(modelNode: SCNNode, speedMultiplier: Float) {
-        let flickerAction = SCNAction.sequence([
-            SCNAction.fadeOpacity(to: 0.3, duration: 0.1 * Double(speedMultiplier)),
-            SCNAction.fadeOpacity(to: 1.0, duration: 0.1 * Double(speedMultiplier))
-        ])
-        modelNode.runAction(SCNAction.repeatForever(flickerAction))
     }
     
     func pauseAnimations() {
@@ -262,4 +431,4 @@ class SceneModel: ObservableObject {
             node.isPaused = false
         }
     }
-} 
+}

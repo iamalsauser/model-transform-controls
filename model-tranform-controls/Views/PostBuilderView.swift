@@ -13,53 +13,27 @@ struct PostBuilderView: View {
     var body: some View {
         NavigationView {
             ScrollView {
-                VStack(spacing: 16) {
-                    // 3D Preview Section
+                VStack(spacing: 24) {
+                    
                     previewSection
                     
-                    // Content Creation Section
-                    VStack(spacing: 16) {
-                        // Caption Input
-                        CaptionInputView(viewModel: viewModel)
-                        
-                        // Model Selector
-                        ModelSelectorView(viewModel: viewModel)
-                        
-                        // Color Picker
-                        ColorPickerView(viewModel: viewModel)
-                        
-                        // Transform Controls
-                        TransformControlsView(viewModel: viewModel)
-                        
-                        // Debug View (temporary)
-                        DebugView(viewModel: viewModel)
-                        
-                        // Create Post Button
-                        createPostButton
-                    }
-                    .padding(.horizontal, 16)
+                    contentBuilderSection
+                    
+                    createPostButton
+                        .padding(.horizontal, 16)
                 }
                 .padding(.vertical, 16)
             }
             .navigationTitle("Create Post")
             .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Preview") {
-                        // Preview functionality
-                    }
-                    .fontWeight(.medium)
-                }
+            .toolbar { previewToolbarButton }
+            .alert("🎉 Post Created!", isPresented: $viewModel.showSuccessAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("Your immersive post has been created successfully!")
             }
         }
-        .alert("🎉 Post Created!", isPresented: $viewModel.showSuccessAlert) {
-            Button("OK") { }
-        } message: {
-            Text("Your immersive post has been created successfully!")
-        }
     }
-    
-
     
     // MARK: - Preview Section
     private var previewSection: some View {
@@ -71,9 +45,7 @@ struct PostBuilderView: View {
                 
                 Spacer()
                 
-                Button(action: {
-                    viewModel.toggleAnimation()
-                }) {
+                Button(action: viewModel.toggleAnimation) {
                     HStack(spacing: 4) {
                         Image(systemName: viewModel.isAnimating ? "play.fill" : "pause.fill")
                             .font(.caption)
@@ -92,7 +64,6 @@ struct PostBuilderView: View {
                 .buttonStyle(PlainButtonStyle())
             }
             
-            // 3D Scene
             SceneKitView(viewModel: viewModel)
                 .frame(height: 280)
                 .background(Color(.systemGray6))
@@ -105,11 +76,21 @@ struct PostBuilderView: View {
         .padding(.horizontal, 16)
     }
     
+    // MARK: - Content Builder Section
+    private var contentBuilderSection: some View {
+        VStack(spacing: 20) {
+            CaptionInputView(viewModel: viewModel)
+            ModelSelectorView(viewModel: viewModel)
+            ColorPickerView(viewModel: viewModel)
+            TransformControlsView(viewModel: viewModel)
+            DebugView(viewModel: viewModel)
+        }
+        .padding(.horizontal, 16)
+    }
+    
     // MARK: - Create Post Button
     private var createPostButton: some View {
-        Button(action: {
-            viewModel.createPost()
-        }) {
+        Button(action: viewModel.createPost) {
             HStack(spacing: 8) {
                 if viewModel.isCreatingPost {
                     ProgressView()
@@ -136,7 +117,15 @@ struct PostBuilderView: View {
         .buttonStyle(PlainButtonStyle())
     }
     
-
+    // MARK: - Toolbar
+    private var previewToolbarButton: some ToolbarContent {
+        ToolbarItem(placement: .navigationBarTrailing) {
+            Button("Preview") {
+                // Future preview action
+            }
+            .fontWeight(.medium)
+        }
+    }
 }
 
 // MARK: - Preview
@@ -144,4 +133,4 @@ struct PostBuilderView_Previews: PreviewProvider {
     static var previews: some View {
         PostBuilderView()
     }
-} 
+}
