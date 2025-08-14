@@ -43,6 +43,7 @@ class SceneModel: ObservableObject {
         ambientLight.light?.type = .ambient
         ambientLight.light?.intensity = 300
         ambientLight.light?.color = UIColor.white
+    
         rootNode.addChildNode(ambientLight)
         
         // Add directional lighting
@@ -54,6 +55,7 @@ class SceneModel: ObservableObject {
         directionalLight.position = SCNVector3(5, 5, 5)
         directionalLight.look(at: SCNVector3(0, 0, 0))
         rootNode.addChildNode(directionalLight)
+        
         
         // Add point light for better illumination
         let pointLight = SCNNode()
